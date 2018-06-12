@@ -11,6 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using ManagerACount.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace ManagerACount
 {
@@ -28,6 +30,8 @@ namespace ManagerACount
         {
             services.AddCors();
             services.AddMvc();
+
+            services.AddDbContext<EfManagerAccountContext>(options=> options.UseSqlServer(Configuration.GetConnectionString("EfManagerAccountContext")));
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options=> options.TokenValidationParameters = new TokenValidationParameters {

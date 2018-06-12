@@ -1,4 +1,7 @@
-﻿using System;
+﻿
+#region Using
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,6 +12,13 @@ using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using ManagerACount.Data;
+using ManagerACount.Data.Entities;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using ManagerACount.Utilities;
+
+#endregion
 
 namespace ManagerACount.Controllers
 {
@@ -16,24 +26,44 @@ namespace ManagerACount.Controllers
     [Route("api/Account")]
     public class AccountController : Controller
     {
+
+        protected readonly EfManagerAccountContext _context;
+
+        public AccountController(EfManagerAccountContext context)
+        {
+            _context = context;
+        }
+
         [HttpPost]
         [Route("Login")]
         public IActionResult Login([FromBody]AccountDTO dto)
         {
-            if (ModelState.IsValid)
+            try
             {
-                if (dto.UserEmail.Equals("esteban@gmail.com") == true && dto.UserPassword.Equals("4321") == true)
+                if (ModelState.IsValid)
                 {
-                    return BuildToken(dto);
+                    dto.UserPassword = dto.UserPassword.Base64Encode();
+
+                    var result = _context.Account.Where(a => a.UserEmail.ToLower() == dto.UserEmail.ToLower() && a.UserPassword == dto.UserPassword.ToLower()).FirstOrDefault();
+
+                    if (result != null)
+                    {
+                        return BuildToken(dto);
+                    }
+                    else
+                    {
+                        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                        return BadRequest(ModelState);
+                    }
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                     return BadRequest(ModelState);
                 }
             }
-            else
+            catch (Exception ex)
             {
+                ModelState.AddModelError("Error try",ex.Message);
                 return BadRequest(ModelState);
             }
         }
@@ -64,6 +94,65 @@ namespace ManagerACount.Controllers
                 token = new JwtSecurityTokenHandler().WriteToken(token),
                 expire = expiration,
             });
+        }
+
+        [HttpPost]
+        [Route("CreateAccount")]
+        public async Task<IActionResult> CreateAccount([FromBody]AccountDTO dto)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+
+                    var result = _context.Account.Where(a=> a.UserEmail.ToLower() == dto.UserEmail.ToLower()).FirstOrDefault();
+
+                    if (result == null)
+                    {
+                        Mapper.Initialize(cfg => cfg.CreateMap<AccountDTO, Account>());
+                        var entity = Mapper.Map<AccountDTO, Account>(dto);
+
+                        var userEntity = new User()
+                        {
+                            CreationDate = DateTime.Now,
+                        };
+
+                        _context.User.Add(userEntity);
+                        await _context.SaveChangesAsync();
+
+                        entity.RoleId = 1;
+                        entity.StateId = 1;
+                        entity.UserId = userEntity.UserId;
+                        entity.CreationDate = DateTime.Now;
+                        entity.UserPassword = entity.UserPassword.Base64Encode();
+                        _context.Account.Add(entity);
+                        await _context.SaveChangesAsync();
+
+                        entity.UserPassword = dto.UserPassword;
+
+                        return Ok(new
+                        {
+                            Success = true,
+                            Result = entity
+                        });
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("Error","El Correo eletrónico ya se encuentrá registrado.");
+                        return BadRequest(ModelState);
+                    }
+
+                }
+                else
+                {
+                    return BadRequest(ModelState);
+                }
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("Error try", ex.Message);
+                return BadRequest(ModelState);
+            }
         }
     }
 }

@@ -17,6 +17,7 @@ using ManagerACount.Data.Entities;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using ManagerACount.Utilities;
+using System.Web;
 
 #endregion
 
@@ -27,11 +28,17 @@ namespace ManagerACount.Controllers
     public class AccountController : Controller
     {
 
-        protected readonly EfManagerAccountContext _context;
+        protected readonly EfManagerAccountUsersContext _contextUsers;
+        protected readonly EfManagerAccountConfigurationsContext _contextConfiguration;
+        private IHttpContextAccessor _accessor;
 
-        public AccountController(EfManagerAccountContext context)
+        public AccountController(EfManagerAccountUsersContext contextUsers,
+            EfManagerAccountConfigurationsContext contextConfiguration,
+            IHttpContextAccessor accessor)
         {
-            _context = context;
+            _contextUsers = contextUsers;
+            _contextConfiguration = contextConfiguration;
+            _accessor = accessor;
         }
 
         [HttpPost]
@@ -44,7 +51,7 @@ namespace ManagerACount.Controllers
                 {
                     dto.UserPassword = dto.UserPassword.Base64Encode();
 
-                    var result = _context.Account.Where(a => a.UserEmail.ToLower() == dto.UserEmail.ToLower() && a.UserPassword == dto.UserPassword.ToLower()).FirstOrDefault();
+                    var result = _contextUsers.Account.Where(a => a.UserEmail.ToLower() == dto.UserEmail.ToLower() && a.UserPassword == dto.UserPassword.ToLower()).FirstOrDefault();
 
                     if (result != null)
                     {
@@ -89,6 +96,23 @@ namespace ManagerACount.Controllers
                 signingCredentials: creds
                 );
 
+
+            #region Log     
+
+            LogSession log = new LogSession()
+            {
+                LogSessionId = 0,
+                Token = new JwtSecurityTokenHandler().WriteToken(token),
+                IP = _accessor.HttpContext.Connection.RemoteIpAddress.ToString(),
+                CreationDate = DateTime.Now,
+            };
+
+            _contextConfiguration.LogSession.Add(log);
+            _contextConfiguration.SaveChanges();
+
+
+            #endregion
+
             return Ok(new
             {
                 token = new JwtSecurityTokenHandler().WriteToken(token),
@@ -105,7 +129,7 @@ namespace ManagerACount.Controllers
                 if (ModelState.IsValid)
                 {
 
-                    var result = _context.Account.Where(a=> a.UserEmail.ToLower() == dto.UserEmail.ToLower()).FirstOrDefault();
+                    var result = _contextUsers.Account.Where(a=> a.UserEmail.ToLower() == dto.UserEmail.ToLower()).FirstOrDefault();
 
                     if (result == null)
                     {
@@ -117,16 +141,16 @@ namespace ManagerACount.Controllers
                             CreationDate = DateTime.Now,
                         };
 
-                        _context.User.Add(userEntity);
-                        await _context.SaveChangesAsync();
+                        _contextUsers.User.Add(userEntity);
+                        await _contextUsers.SaveChangesAsync();
 
-                        entity.RoleId = 1;
+                        entity.RoleId = 2;
                         entity.StateId = 1;
                         entity.UserId = userEntity.UserId;
                         entity.CreationDate = DateTime.Now;
                         entity.UserPassword = entity.UserPassword.Base64Encode();
-                        _context.Account.Add(entity);
-                        await _context.SaveChangesAsync();
+                        _contextUsers.Account.Add(entity);
+                        await _contextUsers.SaveChangesAsync();
 
                         entity.UserPassword = dto.UserPassword;
 
@@ -154,5 +178,6 @@ namespace ManagerACount.Controllers
                 return BadRequest(ModelState);
             }
         }
+
     }
 }

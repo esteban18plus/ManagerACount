@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using ManagerACount.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 
 namespace ManagerACount
 {
@@ -29,9 +30,11 @@ namespace ManagerACount
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddCors();
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddMvc();
 
-            services.AddDbContext<EfManagerAccountContext>(options=> options.UseSqlServer(Configuration.GetConnectionString("EfManagerAccountContext")));
+            services.AddDbContext<EfManagerAccountUsersContext>(options=> options.UseSqlServer(Configuration.GetConnectionString("EfManagerAccountContext")));
+            services.AddDbContext<EfManagerAccountConfigurationsContext>(options=> options.UseSqlServer(Configuration.GetConnectionString("EfManagerAccountContext")));
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options=> options.TokenValidationParameters = new TokenValidationParameters {

@@ -9,6 +9,8 @@ namespace ManagerACount.Models
     public class AccountDTO
     {
         [Required]
+        [DataType(DataType.EmailAddress)]
+        [EmailAddress]
         public string UserEmail { get; set; }
 
         [Required]

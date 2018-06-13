@@ -8,10 +8,10 @@ using ManagerACount.Data.Entities;
 
 namespace ManagerACount.Data
 {
-    public partial class EfManagerAccountContext : DbContext
+    public partial class EfManagerAccountUsersContext : DbContext
     {
 
-        public EfManagerAccountContext(DbContextOptions<EfManagerAccountContext> options)
+        public EfManagerAccountUsersContext(DbContextOptions<EfManagerAccountUsersContext> options)
 : base(options)
         { }
 
@@ -34,7 +34,6 @@ namespace ManagerACount.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema("Users");
-            //modelBuilder.HasDefaultSchema("Configurations");
         }
 
     }

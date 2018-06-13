@@ -9,14 +9,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace ManagerACount.Controllers
 {
     [Route("api/[controller]")]
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class ValuesController : Controller
     {
         // GET api/values
         [HttpGet]
-        public IEnumerable<string> Get()
+        public string Get()
         {
-            return new string[] { "value1", "value2" };
+            return String.Format("API ready {0:dd/MM/yyyy}", DateTime.Now);
         }
 
         // GET api/values/5

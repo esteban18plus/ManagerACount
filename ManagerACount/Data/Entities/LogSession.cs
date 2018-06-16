@@ -15,5 +15,7 @@ namespace ManagerACount.Data.Entities
         public string Token { get; set; }
         public string IP { get; set; }
         public System.DateTime CreationDate { get; set; }
+        public bool State { get; set; }
+        public System.DateTime ExpirationDate { get; set; }
     }
 }

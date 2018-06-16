@@ -70,7 +70,7 @@ namespace ManagerACount.Controllers
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("Error try",ex.Message);
+                ModelState.AddModelError("Error try", ex.Message);
                 return BadRequest(ModelState);
             }
         }
@@ -105,6 +105,8 @@ namespace ManagerACount.Controllers
                 Token = new JwtSecurityTokenHandler().WriteToken(token),
                 IP = _accessor.HttpContext.Connection.RemoteIpAddress.ToString(),
                 CreationDate = DateTime.Now,
+                State = true,
+                ExpirationDate= expiration,
             };
 
             _contextConfiguration.LogSession.Add(log);
@@ -129,7 +131,7 @@ namespace ManagerACount.Controllers
                 if (ModelState.IsValid)
                 {
 
-                    var result = _contextUsers.Account.Where(a=> a.UserEmail.ToLower() == dto.UserEmail.ToLower()).FirstOrDefault();
+                    var result = _contextUsers.Account.Where(a => a.UserEmail.ToLower() == dto.UserEmail.ToLower()).FirstOrDefault();
 
                     if (result == null)
                     {
@@ -162,7 +164,7 @@ namespace ManagerACount.Controllers
                     }
                     else
                     {
-                        ModelState.AddModelError("Error","El Correo eletrónico ya se encuentrá registrado.");
+                        ModelState.AddModelError("Error", "El Correo eletrónico ya se encuentrá registrado.");
                         return BadRequest(ModelState);
                     }
 
@@ -177,6 +179,42 @@ namespace ManagerACount.Controllers
                 ModelState.AddModelError("Error try", ex.Message);
                 return BadRequest(ModelState);
             }
+        }
+
+        [HttpGet]
+        [Route("LogOut")]
+        public async Task<IActionResult> LogOut(string token)
+        {
+            try
+            {
+                LogSession entityOld = _contextConfiguration.LogSession.First(c => c.Token == token && c.State == true);
+
+                if (entityOld != null)
+                {
+
+                    entityOld.State = false;
+                    _contextConfiguration.Update<LogSession>(entityOld);
+
+                    await _contextConfiguration.SaveChangesAsync();
+
+                    return Ok(new
+                    {
+                        Success = true,
+                        Date = DateTime.Now,
+                    });
+                }
+                else
+                {
+                    ModelState.AddModelError("Error", "Token invalido.");
+                    return BadRequest(ModelState);
+                }
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("Error",ex.Message);
+                return BadRequest(ModelState);
+            }
+            
         }
 
     }

@@ -14,6 +14,7 @@ using Microsoft.IdentityModel.Tokens;
 using ManagerACount.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
+using Swashbuckle.AspNetCore.Swagger;
 
 namespace ManagerACount
 {
@@ -32,6 +33,11 @@ namespace ManagerACount
             services.AddCors();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddMvc();
+
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Info { Title = "Study-Friends-API", Version = "v1" });
+            });
 
             services.AddDbContext<EfManagerAccountUsersContext>(options=> options.UseSqlServer(Configuration.GetConnectionString("EfManagerAccountContext")));
             services.AddDbContext<EfManagerAccountConfigurationsContext>(options=> options.UseSqlServer(Configuration.GetConnectionString("EfManagerAccountContext")));
@@ -77,9 +83,16 @@ namespace ManagerACount
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials()
+            .WithExposedHeaders("Authorization")
             );
 
             app.UseMvc();
+
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Study-Friends-API");
+            });
         }
     }
 }
